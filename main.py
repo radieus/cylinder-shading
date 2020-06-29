@@ -3,6 +3,7 @@ import numpy as np
 import pygame
 from PIL import Image
 from pygame.locals import *
+from scanline import *
 from cylinder import Cylinder
 from sys import exit
 
@@ -12,12 +13,11 @@ pygame.init()
 pygame.display.set_caption('cylinder-shading')
 screen = pygame.display.set_mode((width, height))
 CLOCK = pygame.time.Clock()
-font = pygame.font.Font(pygame.font.get_default_font(), 36)
 
 # projection setup
 theta = pi / 2
 S = 1 / tan(theta / 2)
-near = 0.1
+near = 1.0
 far = 100.0
 
 # projection matrix (https://www.scratchapixel.com/lessons/3d-basic-rendering/perspective-and-orthographic-projection-matrix/building-basic-perspective-projection-matrix)
@@ -43,6 +43,8 @@ def draw_triangle(x1, y1, x2, y2, x3, y3):
 
 cyl = Cylinder()
 
+filler = Filler(screen)
+
 # translation matrix
 T = np.eye(4)
 T[3, 1] = -cyl.get_center_y()
@@ -62,7 +64,7 @@ def cross_product(v, w):
     return vec
 
 # function which draws 3D triangles on screen and applies rotation
-def rotate(dx, dy, dz):
+def rotate(dx, dy, dz, filler):
     R_xn = np.array([
         [1, 0, 0, 0],
         [0, cos(dx), sin(dx), 0],
@@ -105,8 +107,9 @@ def rotate(dx, dy, dz):
                 points[i] = points[i].dot(S)
 
             draw_triangle(points[0][0], points[0][1], points[1][0], points[1][1], points[2][0], points[2][1])
+            filler.scan_line([[int(points[0][0]), int(points[0][1])], [int(points[1][0]), int(points[1][1])],[int(points[2][0]), int(points[2][1])]])
 
-rotate(0, 0, pi)
+rotate(0, 0, pi, filler)
 
 pygame.display.flip()
 
@@ -174,7 +177,7 @@ while on:
 
     if left or right or up or down or a_key or z_key or redraw:
         screen.fill((0, 0, 0))
-        rotate(angle_x, angle_y, angle_z)
+        rotate(angle_x, angle_y, angle_z, filler)
         pygame.display.flip()
         redraw = False
     CLOCK.tick(120)
